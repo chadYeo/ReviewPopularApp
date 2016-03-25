@@ -1,16 +1,17 @@
 package com.example.android.reviewpopularapp.api;
 
-import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.Parcel;
 
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
 /**
- * Created by chad.yeo on 3/23/2016.
+ * Created by ChadYeo on 2/15/16.
  */
 public class MovieResponse {
+
     public ArrayList<Movie> results;
 
     public static class Movie implements Parcelable {
@@ -24,22 +25,26 @@ public class MovieResponse {
         public String overview;
 
         @SerializedName("vote_average")
-        public String rating;
+        public float rating;
 
         @SerializedName("release_date")
         public String releaseDate;
 
         public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
-            public Movie createFromParcel (Parcel in) { return new Movie(in); }
+            public Movie createFromParcel(Parcel in) {
+                return new Movie(in);
+            }
 
-            public Movie[] newArray(int size) { return new Movie[size]; }
+            public Movie[] newArray(int size) {
+                return new Movie[size];
+            }
         };
 
-        public Movie(Parcel in) {
+        private Movie(Parcel in) {
             title = in.readString();
             posterPath = in.readString();
             overview = in.readString();
-            rating = in.readString();
+            rating = in.readFloat();
             releaseDate = in.readString();
         }
 
@@ -53,12 +58,18 @@ public class MovieResponse {
             out.writeString(title);
             out.writeString(posterPath);
             out.writeString(overview);
-            out.writeString(rating);
+            out.writeFloat(rating);
             out.writeString(releaseDate);
         }
 
-        public String getPosterUrl() { return IMAGE_BASE_URL + "w185" + this.posterPath; }
+        /**
+         * Helper method to build poster image url.
+         */
+        public String getPosterUrl() {
+            return IMAGE_BASE_URL + "w185" + this.posterPath;
+        }
 
-        private static final String IMAGE_BASE_URL = "http://image.tmdb.org/t/p/";
+        private final static String IMAGE_BASE_URL = "http://image.tmdb.org/t/p/";
+
     }
 }

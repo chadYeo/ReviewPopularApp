@@ -1,10 +1,13 @@
 package com.example.android.reviewpopularapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.android.reviewpopularapp.api.MovieResponse;
+import com.example.android.reviewpopularapp.fragments.MovieDetailFragment;
 import com.example.android.reviewpopularapp.fragments.MoviesFragment;
 
 public class MainActivity extends AppCompatActivity implements MoviesFragment.ListActionListener {
@@ -27,9 +30,19 @@ public class MainActivity extends AppCompatActivity implements MoviesFragment.Li
 
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+
+            startActivity(intent);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onMovieSelected(MovieResponse.Movie movie) {
+        Intent intent = new Intent(this, DetailsActivity.class);
+        intent.putExtra(MovieDetailFragment.ARG_MOVIE, movie);
+        startActivity(intent);
     }
 }

@@ -91,15 +91,70 @@ public class MoviesFragment extends Fragment {
         mAdapter = new MovieAdapter(getActivity(), mActionListener);
         mRecyclerView.setAdapter(mAdapter);
         if (savedInstanceState == null) {
-
+            loadData();
+        } else {
+            mSortOrder = savedInstanceState.getString(ARG_SORT_ORDER);
+            if (!mSortOrder.equalsIgnoreCase(getSortParam())) {
+                loadData();
+            }
+            int state = savedInstanceState.getInt(ARG_VIEW_STATE, VIEW_STATE_ERROR);
+            switch (state) {
+                case VIEW_STATE_ERROR:
+                    showErrorViews();
+                    break;
+                case VIEW_STATE_RESULTS:
+                    ArrayList<MovieResponse.Movie> items = savedInstanceState.getParcelableArrayList(ARG_ITEMS);
+                    showResultViews();
+                    break;
+                case VIEW_STATE_LOADING:
+                    showLoadingViews();
+                    break;
+            }
         }
+        return v;
     }
 
-    public interface ListActionListener {
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        int state = VIEW_STATE_RESULTS;
+        if (mProgressBar.getVisibility() == View.VISIBLE) {
+            state = VIEW_STATE_LOADING;
+        } else if (mErrorTextView.getVisibility() == View.VISIBLE) {
+            state = VIEW_STATE_ERROR;
+        }
+        outState.putInt(ARG_VIEW_STATE, state);
+        outState.putParcelableArrayList(ARG_ITEMS, mAdapter.getItems());
+        outState.putString(ARG_SORT_ORDER, mSortOrder);
+        super.onSaveInstanceState(outState);
     }
 
-    private static
-    class MovieAdapter {
+    private void loadData() {
+        showLoadingViews();
+        RestAdapter adapter = RetrofitAdapter.getRestAdapter();
+        TmdbService service = adapter.create(TmdbService.class);
+        mSortOrder = getSortParam();
+        service.getMovieList(mSortOrder, new Callback<MovieResponse>() {
+            @Override
+            public void success(MovieResponse movieResponse, Response response) {
+                showResultViews();
+                mAdapter.setItems(movieResponse.results);
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+                showErrorViews();
+            }
+        });
+    }
+
+    private void retry() {
+        loadData();
+    }
+
+    private String getSortParam() {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String defaultValue = getString(R.string.sort_order_popularity);
+        return pref.getString("sort_order", defaultValue);
     }
 
     private void showLoadingViews() {
@@ -121,23 +176,6 @@ public class MoviesFragment extends Fragment {
         mErrorTextView.setVisibility(View.GONE);
         mRetryButton.setVisibility(View.GONE);
         mRecyclerView.setVisibility(View.VISIBLE);
-    }
-
-    private void retry() {
-        loadData();
-    }
-
-    private void loadData() {
-        showLoadingViews();
-        RestAdapter adapter = RetrofitAdapter.getRestAdapter();
-        TmdbService service = adapter.create(TmdbService.class);
-        mSortOrder = getSortParam();
-    }
-
-    private String getSortParam() {
-        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        String defaultValue = getString(R.string.sort_order_popularity);
-        return pref.getString("sort_order", defaultValue);
     }
 
     private static class MovieAdapter extends RecyclerView.Adapter<MovieViewHolder> {
@@ -175,6 +213,17 @@ public class MoviesFragment extends Fragment {
                 }
             });
         }
+
+        @Override
+        public int getItemCount() {
+            return mItems.size();
+        }
+
+        public void setItems(ArrayList<MovieResponse.Movie> items) {
+            mItems = items;
+            notifyDataSetChanged();
+        }
+        public ArrayList<MovieResponse.Movie> getItems() { return mItems; }
     }
 
     private static class MovieViewHolder extends RecyclerView.ViewHolder {
